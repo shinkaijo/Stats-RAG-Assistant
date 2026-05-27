@@ -1,0 +1,7 @@
+streamlit
+langchain
+langchain-openai
+faiss-cpu
+beautifulsoup4
+markdownify
+python-dotenv
