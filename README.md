@@ -1,38 +1,130 @@
-# 📊 신뢰할 수 있는 통계 가이드라인 기반의 RAG 보조 어시스턴트
+# Stats-RAG-Assistant
 
-> **데이터 분석 과정에서 마주하는 통계적 의사결정(분석 기법 선택, 가정 검증, 결과 해석 등)을 돕는 RAG 기반 AI 챗봇 웹 서비스입니다.**
+신뢰할 수 있는 통계 가이드라인 기반의 RAG 보조 어시스턴트.
+Penn State STAT 501·504 강의 자료를 벡터 DB로 구축하고, 질문에 대해 **검증된 출처만**을 근거로 한국어로 답변합니다.
 
-기존 대형 언어 모델(LLM)의 고질적인 한계인 환각 현상(Hallucination)을 차단하기 위해, 사전 수집한 공신력 있는 전공 지식 베이스(Penn State)의 벡터 데이터베이스 안에서만 정답을 탐색하도록 통제하는 RAG 아키텍처를 구현했습니다.
-
----
-
-## 🛠️ 주요 기능 (Key Features)
-* **대화형 통계 컨설팅**: 자연어 질문(예: "Durbin-Watson 통계량이 1.1이 나왔어. 문제가 있는 거야?")에 대한 맞춤형 피드백 제공
-* **철저한 근거 중심 답변**: 답변 출력 시 텍스트 하단에 참고한 통계 전공 문헌의 구체적인 출처 명시
-* **안전한 환각 차단 (Exception Handling)**: 외부 문헌 DB에 관련 가이드라인이 존재하지 않을 경우 "가이드라인이 존재하지 않음"으로 예외 처리
+> 📚 출처: [Penn State STAT 501 Regression Methods](https://online.stat.psu.edu/stat501/), [STAT 504 Analysis of Discrete Data](https://online.stat.psu.edu/stat504/)
 
 ---
 
-## 🏗️ 시스템 아키텍처 (System Architecture)
-Streamlit UI와 LangChain 파이프라인을 결합한 가볍고 빠른 로컬 RAG 시스템입니다.
+## 🏗️ 아키텍처
 
-1. **User UI (Streamlit)**: 사용자가 자연어로 통계 관련 질문 입력
-2. **LangChain Pipeline**: 사용자 질문을 벡터화하여 로컬 Vector DB(FAISS)에서 관련 지식 문단 추출
-3. **Prompt Engineering**: 검색된 DB 내용만을 절대적 근거로 삼도록 설계된 시스템 프롬프트 조립
-4. **LLM (GPT-4o-mini)**: 팩트 기반의 통계 답변 및 정확한 레퍼런스 출처 출력
+```
+[사용자 질문]
+    ↓
+[Streamlit Web UI]                  ← Step 4 예정
+    ↓
+[FAISS 벡터 검색 — 상위 4개 청크]
+    ↓
+[GPT-4o-mini + 시스템 프롬프트]
+    ↓
+[한국어 답변 + 출처(Penn State URL) 표기]
+```
+
+**기술 스택**: BeautifulSoup + markdownify → LangChain + FAISS → GPT-4o-mini → Streamlit
 
 ---
 
-## 💻 기술 스택 (Tech Stack)
-* **Frontend / UI**: Streamlit
-* **RAG Framework**: LangChain
-* **Vector Database**: FAISS (Meta)
-* **LLM API**: OpenAI GPT-4o-mini
-* **Data Scraping & Parsing**: BeautifulSoup, markdownify
+## 📁 폴더 구조
+
+```
+opensource_statchatbot/
+├── data/                          # 크롤링한 원본 텍스트
+│   ├── stat501_full_data.txt
+│   └── stat504_full_data.txt
+├── vector_db/                     # FAISS 인덱스
+│   ├── faiss_stat501_db/          # STAT 501 단독
+│   └── faiss_stat_integrated_db/  # STAT 501 + 504 통합
+├── notebooks/
+│   ├── crawling/                  # Penn State 사이트 크롤링
+│   ├── build_db/                  # 텍스트 → 벡터 DB 변환
+│   ├── mvp/                       # RAG 챗봇 MVP
+│   └── _archive/                  # 옛 실험 노트북 (참고용)
+├── .env.example                   # 환경 변수 템플릿
+├── .gitignore
+├── requirements.txt
+└── README.md
+```
 
 ---
 
-## 👥 팀원 및 역할 분담 (Team & Roles)
-* **통계 도메인 & 데이터 리드**: 크롤링 전공 웹페이지 선정, 추출 텍스트 노이즈 검수, 챗봇 답변의 통계학적 정확성(QA) 테스트
-* **파이프라인 & 백엔드 리드**: BeautifulSoup 웹 크롤링 스크립트 작성, LangChain 기반 RAG 파이프라인 조립 및 FAISS 세팅
-* **프론트엔드 & 프롬프트 리드**: Streamlit 웹 UI 구현, 외부 DB만 참고하도록 통제하는 시스템 프롬프트 작성 및 최적화
+## 🚀 빠른 시작
+
+### 1. 레포지토리 클론
+
+```bash
+git clone https://github.com/csm4165/Stats-RAG-Assistant.git
+cd Stats-RAG-Assistant
+```
+
+### 2. 가상환경 + 의존성 설치 (권장)
+
+```bash
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# macOS / Linux
+source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+### 3. OpenAI API 키 설정
+
+`.env.example`을 복사해서 `.env`를 만들고, 본인의 OpenAI API 키를 넣습니다.
+
+```bash
+cp .env.example .env   # Windows에서는 copy .env.example .env
+```
+
+`.env` 파일을 메모장으로 열어서:
+```
+OPENAI_API_KEY=sk-proj-여기에_본인의_키
+```
+
+> ⚠️ `.env`는 `.gitignore`로 제외되어 GitHub에 올라가지 않습니다. 절대 `.env.example`에 실제 키를 넣지 마세요.
+
+### 4. 챗봇 MVP 실행
+
+```bash
+jupyter notebook
+```
+브라우저에서 `notebooks/mvp/MVPmodel(501db).ipynb` 열고 **Cell → Run All** 실행 → 미리 설정된 통계 질문에 대한 한국어 답변이 나옵니다.
+
+---
+
+## 🔄 처음부터 다시 빌드하고 싶다면
+
+1. **크롤링 다시**: `notebooks/crawling/` 안의 두 노트북 실행 → `data/`에 텍스트 파일 생성
+2. **DB 빌드**: `notebooks/build_db/vector_db501.ipynb` → `notebooks/build_db/build_integrated_db.ipynb` 순서로 실행
+3. **챗봇 테스트**: `notebooks/mvp/MVPmodel(501db).ipynb`
+
+> 💡 이미 빌드된 `vector_db/faiss_stat_integrated_db/`가 있다면 크롤링·DB 빌드는 건너뛰어도 됩니다.
+
+---
+
+## 👥 팀 역할 분담
+
+| 담당 영역 | 작업 |
+|---|---|
+| 통계 도메인 & 데이터 | 크롤링 페이지 선정, 텍스트 검수, QA 평가 질문 작성 |
+| 파이프라인 & 백엔드 | 크롤링 스크립트, LangChain RAG, FAISS 인덱싱 |
+| 프론트엔드 & 프롬프트 | Streamlit UI, 시스템 프롬프트 튜닝 |
+
+---
+
+## 📝 라이선스 및 데이터 출처
+
+- 코드: 학습/연구용 오픈소스
+- 데이터: Penn State Eberly College of Science 공개 강의 자료
+  - [STAT 501: Regression Methods](https://online.stat.psu.edu/stat501/)
+  - [STAT 504: Analysis of Discrete Data](https://online.stat.psu.edu/stat504/)
+
+---
+
+## 🔗 참고 자료
+
+- [LangChain Documentation](https://python.langchain.com/)
+- [FAISS Documentation](https://faiss.ai/)
+- [Streamlit Documentation](https://docs.streamlit.io/)
+- 레퍼런스 프로젝트: [Legal-RAG-Chatbot](https://github.com/wngud09/Legal-RAG-Chatbot)
